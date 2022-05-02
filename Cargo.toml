@@ -2,6 +2,7 @@
 name = "vl"
 version = "0.0.1"
 edition = "2021"
+description = "A CLI tool to generate Vega-Lite specifications."
 license = "BSD-3-Clause"
 
 [lib]
