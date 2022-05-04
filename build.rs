@@ -25,22 +25,7 @@ pub fn main() {
     let config = config["properties"].as_object().unwrap();
     writeln!(
         f,
-        "use clap::{{Subcommand, Args}};
-pub fn parse_encodings(s: &str) -> String {{
-    s.split(',').map(|prop| {{
-        let mut tokens = prop.split(':').fuse();
-        let k = tokens.next();
-        let v = tokens.next();
-        match (k, v) {{
-            (Some(\"f\"), Some(v)) | (Some(\"field\"), Some(v)) => format!(\"\\\"field\\\": \\\"{{v}}\\\"\"),
-            (Some(\"a\"), Some(v)) | (Some(\"aggregate\"), Some(v)) => format!(\"\\\"aggregate\\\": \\\"{{v}}\\\"\"),
-            (Some(\"t\"), Some(v)) | (Some(\"type\"), Some(v)) => format!(\"\\\"type\\\": \\\"{{v}}\\\"\"),
-            (Some(\"b\"), Some(v)) | (Some(\"bin\"), Some(v)) => format!(\"\\\"bin\\\": {{v}}\"),
-            (Some(\"u\"), Some(v)) | (Some(\"timeUnit\"), Some(v)) => format!(\"\\\"timeUnit\\\": \\\"{{v}}\\\"\"),
-            _ => String::new()
-        }}
-    }}).collect::<Vec<String>>().join(\",\")
-}}"
+        "use clap::{{Subcommand, Args}};\nuse crate::parse_encodings;"
     );
     let mut enumstr = String::from("#[derive(Subcommand, Debug)]\npub enum Marks {");
     for mark in marks {
@@ -63,13 +48,13 @@ pub fn parse_encodings(s: &str) -> String {{
                     "\t#[clap(long=\"{kebab_prop}\")]\n\tpub {snake_prop}: Option<String>,"
                 );
                 let prop_test = format!(
-                    "if let Some(encoding) = &self.{snake_prop} {{\n\t\tencodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding)));\n\t}}"
+                    "\t\tif let Some(encoding) = &self.{snake_prop} {{\n\t\t\tencodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding)));\n\t\t}}\n"
                 );
                 impl_str.push_str(&prop_test);
             }
             writeln!(f, "}}");
             let s = format!("{camel_mark}({camel_mark}),\n");
-            impl_str.push_str("\tformat!(\"{{{}}}\", encodings.join(\", \"))\n\t}\n}");
+            impl_str.push_str("\t\tformat!(\"{{{}}}\", encodings.join(\", \"))\n\t}\n}");
             writeln!(f, "{impl_str}");
             enumstr.push_str(&s);
         }
