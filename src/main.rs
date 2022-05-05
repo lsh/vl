@@ -107,14 +107,18 @@ pub fn main() {
             Ok(Value::Null)
         }
     } else {
-        let mut lines_buffer = Vec::new();
-        for line in std::io::stdin().lines() {
-            if let Ok(line) = line {
-                lines_buffer.push(line);
+        if atty::is(atty::Stream::Stdin) {
+            Ok(Value::Null)
+        } else {
+            let mut lines_buffer = Vec::new();
+            for line in std::io::stdin().lines() {
+                if let Ok(line) = line {
+                    lines_buffer.push(line);
+                }
             }
+            let lines = lines_buffer.join("");
+            serde_json::from_str(&lines)
         }
-        let lines = lines_buffer.join("");
-        serde_json::from_str(&lines)
     };
 
     if let Ok(data_val) = data_val {
