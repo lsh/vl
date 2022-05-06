@@ -1,10 +1,9 @@
-#![feature(let_chains)]
 #![allow(unused_variables)]
 #![allow(unused_must_use)]
 
 use clap::Parser;
 use serde_json::Value;
-use std::io::{self, Write};
+use std::io::{self, BufRead, Write};
 use vl::{parse_params, parse_transforms, Vl};
 
 pub fn main() {
@@ -56,7 +55,8 @@ pub fn main() {
             Ok(Value::Null)
         } else {
             let mut lines_buffer = Vec::new();
-            for line in std::io::stdin().lines() {
+            let stdin = std::io::stdin();
+            for line in stdin.lock().lines() {
                 if let Ok(line) = line {
                     lines_buffer.push(line);
                 }
