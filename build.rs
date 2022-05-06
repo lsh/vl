@@ -49,7 +49,7 @@ pub fn main() {
                         "#[clap(long=\"{kebab_prop}\")] pub {snake_prop}: Option<String>,"
                     );
                     let prop_test = format!(
-                        "if let Some(encoding) = &self.{snake_prop} {{ encodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding))); }}"
+                        "if let Some(encoding) = &self.{snake_prop} {{ encodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding))); }}\n\n"
                     );
                     impl_str.push_str(&prop_test);
                 }
