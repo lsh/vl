@@ -5,7 +5,7 @@ edition = "2021"
 description = "A CLI tool to generate Vega-Lite specifications."
 repository = "https://github.com/lsh/vl/"
 license = "BSD-3-Clause"
-keywords = ["vega", "vega-lite", "data", "data visualization"]
+keywords = ["vega", "vega-lite", "data", "data-visualization"]
 
 [profile.release]
 strip = "symbols"
