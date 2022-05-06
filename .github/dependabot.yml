@@ -1,0 +1,10 @@
+# Taken from https://github.com/domoritz/csv2parquet/blob/main/.github/dependabot.yml
+version: 2
+updates:
+- package-ecosystem: cargo
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "04:00"
+    timezone: America/Vancouver
+  open-pull-requests-limit: 10

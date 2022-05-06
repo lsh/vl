@@ -1,0 +1,17 @@
+# Taken from https://github.com/domoritz/csv2parquet/blob/main/.github/workflows/merge-dependabot.yml
+name: Auto-merge Dependabot PRs
+on:
+  schedule:
+    - cron: '0 * * * *'
+jobs:
+  auto_merge:
+    name: Auto-merge Dependabot PRs
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: akheron/dependabot-cron-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          auto-merge: 'minor'
+          merge-method: 'rebase'
