@@ -41,8 +41,8 @@ pub fn main() {
     }
 
     let data_val: Result<Value, _> = if let Some(data) = cli.data {
-        if (data.starts_with("\"") && data.ends_with("\""))
-            || (data.starts_with("'") && data.ends_with("'"))
+        if (data.starts_with('\'') && data.ends_with('\"'))
+            || (data.starts_with('\'') && data.ends_with('\''))
         {
             serde_json::from_str(&data)
         } else if data.ends_with(".json") {
@@ -50,20 +50,18 @@ pub fn main() {
         } else {
             Ok(Value::Null)
         }
+    } else if atty::is(atty::Stream::Stdin) {
+        Ok(Value::Null)
     } else {
-        if atty::is(atty::Stream::Stdin) {
-            Ok(Value::Null)
-        } else {
-            let mut lines_buffer = Vec::new();
-            let stdin = std::io::stdin();
-            for line in stdin.lock().lines() {
-                if let Ok(line) = line {
-                    lines_buffer.push(line);
-                }
+        let mut lines_buffer = Vec::new();
+        let stdin = std::io::stdin();
+        stdin.lock().lines().for_each(|line| {
+            if let Ok(line) = line {
+                lines_buffer.push(line);
             }
-            let lines = lines_buffer.join("");
-            serde_json::from_str(&lines)
-        }
+        });
+        let lines = lines_buffer.join("");
+        serde_json::from_str(&lines)
     };
 
     if let Ok(data_val) = data_val {

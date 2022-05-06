@@ -70,7 +70,7 @@ impl Marks {
 }
 
 pub fn parse_encodings(s: &str) -> String {
-    if s.chars().next() == Some('{') {
+    if s.starts_with('{') {
         return s.to_string();
     }
     s.split(',')
@@ -105,14 +105,14 @@ pub fn parse_encodings(s: &str) -> String {
 }
 
 pub fn parse_transforms(s: &str) -> String {
-    if s.chars().next() == Some('{') {
+    if s.starts_with('{') {
         return s.to_string();
     }
     s.to_string()
 }
 
 pub fn parse_params(s: &str) -> String {
-    if s.chars().next() == Some('{') {
+    if s.starts_with('{') {
         return s.to_string();
     }
     s.to_string()

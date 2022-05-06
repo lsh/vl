@@ -34,7 +34,7 @@ pub fn main() {
         if let Value::String(mark) = mark {
             let cf = config[mark.as_str()].as_object().unwrap();
             let config_ref = cf["$ref"].as_str().unwrap();
-            let config_name = config_ref.split("/").last().unwrap();
+            let config_name = config_ref.split('/').last().unwrap();
             if !configs.contains(config_name) {
                 let conf = vdata.pointer(&config_ref[1..]).unwrap();
                 let conf = conf.as_object().unwrap();
