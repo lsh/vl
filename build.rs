@@ -26,9 +26,9 @@ pub fn main() {
     let config = config["properties"].as_object().unwrap();
     writeln!(
         f,
-        "use clap::{{Subcommand, Args}};\nuse crate::parse_encodings;"
+        "use clap::{{Subcommand, Args}}; use crate::parse_encodings;"
     );
-    let mut enumstr = String::from("#[derive(Subcommand, Debug)]\npub enum Marks {");
+    let mut enumstr = String::from("#[derive(Subcommand, Debug)] pub enum Marks {");
     let mut configs: HashSet<&str> = HashSet::new();
     for mark in marks {
         if let Value::String(mark) = mark {
@@ -39,32 +39,33 @@ pub fn main() {
                 let conf = vdata.pointer(&config_ref[1..]).unwrap();
                 let conf = conf.as_object().unwrap();
                 let conf = conf["properties"].as_object().unwrap();
-                writeln!(f, "#[derive(Args, Debug)]\npub struct {config_name} {{");
-                let mut impl_str = format!("impl {config_name} {{\n\tpub fn encode(&self) -> String {{\n\t\tlet mut encodings: Vec<String> = Vec::new();\n");
+                writeln!(f, "#[derive(Args, Debug)] pub struct {config_name} {{");
+                let mut impl_str = format!("impl {config_name} {{ pub fn encode(&self) -> String {{ let mut encodings: Vec<String> = Vec::new();");
                 for (prop, _desc) in conf {
                     let snake_prop = prop.to_case(Case::Snake);
                     let kebab_prop = prop.to_case(Case::Kebab);
                     writeln!(
                         f,
-                        "\t#[clap(long=\"{kebab_prop}\")]\n\tpub {snake_prop}: Option<String>,"
+                        "#[clap(long=\"{kebab_prop}\")] pub {snake_prop}: Option<String>,"
                     );
                     let prop_test = format!(
-                        "\t\tif let Some(encoding) = &self.{snake_prop} {{\n\t\t\tencodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding)));\n\t\t}}\n"
+                        "if let Some(encoding) = &self.{snake_prop} {{ encodings.push(format!(\"\\\"{prop}\\\": {{{{{{}}}}}}\", parse_encodings(encoding))); }}"
                     );
                     impl_str.push_str(&prop_test);
                 }
                 writeln!(f, "}}");
-                impl_str.push_str("\t\tformat!(\"{{{}}}\", encodings.join(\", \"))\n\t}\n}");
+                impl_str.push_str("format!(\"{{{}}}\", encodings.join(\", \")) }}");
                 writeln!(f, "{impl_str}");
                 configs.insert(config_name);
             };
             let camel_mark = mark.to_case(Case::UpperCamel);
             writeln!(
                 f,
-                "#[derive(Args, Debug)]\npub struct {camel_mark} {{\n\t#[clap(flatten)]\n\tconfig: {config_name}\n}}"
+                "#[derive(Args, Debug)] pub struct {camel_mark} {{ #[clap(flatten)] config: {config_name} }}"
             );
-            writeln!(f,
-            "impl {camel_mark} {{\n\tpub fn encode(&self) -> String{{\n\t\t self.config.encode()\n}}\n}}"
+            writeln!(
+                f,
+                "impl {camel_mark} {{pub fn encode(&self) -> String{{ self.config.encode() }}}}"
             );
             let s = format!("{camel_mark}({camel_mark}),\n");
             enumstr.push_str(&s);
