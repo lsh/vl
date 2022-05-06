@@ -14,7 +14,8 @@ pub fn main() {
     );
     let file = File::open("v5.json").expect("Failed to find schema.");
     let reader = BufReader::new(file);
-    let dest_path = Path::new(&"src").join("gen.rs");
+    let out_dir = std::env::var_os("OUT_DIR").unwrap();
+    let dest_path = Path::new(&out_dir).join("gen.rs");
     let mut f = std::fs::File::create(dest_path).expect("Failed to create destination file.");
 
     let vdata: Value = serde_json::from_reader(reader).expect("Failed to parse schema.");
@@ -24,10 +25,6 @@ pub fn main() {
     let marks = marks["enum"].as_array().unwrap();
     let config = defs["Config"].as_object().unwrap();
     let config = config["properties"].as_object().unwrap();
-    writeln!(
-        f,
-        "use clap::{{Subcommand, Args}}; use crate::parse_encodings;"
-    );
     let mut enumstr = String::from("#[derive(Subcommand, Debug)] pub enum Marks {");
     let mut configs: HashSet<&str> = HashSet::new();
     for mark in marks {

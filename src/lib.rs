@@ -1,6 +1,6 @@
-use clap::Parser;
-pub mod gen;
-use gen::Marks;
+include!(concat!(env!("OUT_DIR"), "/gen.rs"));
+
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 pub struct Vl {
