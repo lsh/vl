@@ -3,8 +3,9 @@
 
 use clap::Parser;
 use serde_json::Value;
+use std::fs::File;
 use std::io::{self, BufRead, Write};
-use vl::{parse_params, parse_transforms, Vl};
+use vl::{parse_params, parse_transforms, DataFormat, Vl};
 
 pub fn main() {
     let cli = Vl::parse();
@@ -41,14 +42,10 @@ pub fn main() {
     }
 
     let data_val: Result<Value, _> = if let Some(data) = cli.data {
-        if (data.starts_with('\'') && data.ends_with('\"'))
-            || (data.starts_with('\'') && data.ends_with('\''))
-        {
+        if cli.data_format.is_none() || matches!(cli.data_format, Some(DataFormat::Json)) {
             serde_json::from_str(&data)
-        } else if data.ends_with(".json") {
-            Ok(Value::String(data))
         } else {
-            Ok(Value::Null)
+            Ok(Value::String(data))
         }
     } else if atty::is(atty::Stream::Stdin) {
         Ok(Value::Null)
@@ -57,22 +54,37 @@ pub fn main() {
         let stdin = std::io::stdin();
         stdin.lock().lines().for_each(|line| {
             if let Ok(line) = line {
-                lines_buffer.push(line);
+                lines_buffer.push(format!("{line}\n"));
             }
         });
         let lines = lines_buffer.join("");
-        serde_json::from_str(&lines)
+        if cli.data_format.is_none() || matches!(cli.data_format, Some(DataFormat::Json)) {
+            serde_json::from_str(&lines)
+        } else if cli.data_format.is_some() {
+            Ok(Value::String(lines))
+        } else {
+            Ok(Value::Null)
+        }
     };
 
-    if let Ok(data_val) = data_val {
+    if let Some(path) = cli.input {
+        let format = cli.data_format.unwrap_or(DataFormat::Json).as_str();
+        key_values.push((
+            "data".to_string(),
+            format!("{{\"url\": \"{path}\",\"format\": {{\"type\": \"{format}\"}}}}"),
+        ));
+    } else if let Ok(data_val) = data_val {
         let data = data_val.to_string();
+        let format = cli.data_format.unwrap_or(DataFormat::Json).as_str();
         match data_val {
-            Value::Array(_) => {
-                key_values.push(("data".to_string(), format!("{{ \"values\": {data}}}")))
-            }
-            Value::String(_) => {
-                key_values.push(("data".to_string(), format!("{{ \"url\": {data}}}")))
-            }
+            Value::Array(_) => key_values.push((
+                "data".to_string(),
+                format!("{{\"values\": {data},\"format\": {{\"type\": \"{format}\"}}}}"),
+            )),
+            Value::String(_) => key_values.push((
+                "data".to_string(),
+                format!("{{\"values\": {data},\"format\": {{\"type\": \"{format}\"}}}}"),
+            )),
             Value::Object(_) => key_values.push(("data".to_string(), data)),
             _ => { /* do nothing */ }
         };
@@ -88,8 +100,6 @@ pub fn main() {
         let conf = std::fs::read_to_string(config).expect("failed to read config file");
         key_values.push(("config".to_string(), conf));
     }
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
     let schema = format!(
         "{{{}}}",
         key_values
@@ -98,5 +108,12 @@ pub fn main() {
             .collect::<Vec<String>>()
             .join(",")
     );
-    handle.write_all(schema.as_bytes());
+    if let Some(output) = cli.output {
+        let mut file = File::create(output).expect("Failed to create output file.");
+        file.write_all(schema.as_bytes());
+    } else {
+        let stdout = io::stdout();
+        let mut handle = stdout.lock();
+        handle.write_all(schema.as_bytes());
+    }
 }

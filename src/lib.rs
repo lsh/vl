@@ -1,6 +1,45 @@
 include!(concat!(env!("OUT_DIR"), "/gen.rs"));
 
-use clap::{Args, Parser, Subcommand};
+use clap::{ArgEnum, Args, Parser, Subcommand};
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum ParseError {
+    #[error("Unknown format")]
+    UnknownType,
+}
+
+#[derive(ArgEnum, Debug, Clone, PartialEq, Copy)]
+pub enum DataFormat {
+    Csv,
+    Tsv,
+    Dsv,
+    Json,
+}
+
+impl DataFormat {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Csv => "csv",
+            Self::Dsv => "dsv",
+            Self::Tsv => "tsv",
+            Self::Json => "json",
+        }
+    }
+}
+
+impl std::str::FromStr for DataFormat {
+    type Err = ParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "csv" => Ok(Self::Csv),
+            "dsv" => Ok(Self::Dsv),
+            "tsv" => Ok(Self::Tsv),
+            "json" => Ok(Self::Json),
+            _ => Err(ParseError::UnknownType),
+        }
+    }
+}
 
 #[derive(Parser, Debug)]
 pub struct Vl {
@@ -25,6 +64,15 @@ pub struct Vl {
 
     #[clap(long = "bare")]
     pub bare: bool,
+
+    #[clap(short = 'f', long = "format")]
+    pub data_format: Option<DataFormat>,
+
+    #[clap(short = 'i', long = "input")]
+    pub input: Option<String>,
+
+    #[clap(short = 'o', long = "output")]
+    pub output: Option<String>,
 
     pub data: Option<String>,
 }
@@ -73,33 +121,31 @@ pub fn parse_encodings(s: &str) -> String {
     if s.starts_with('{') {
         return s.to_string();
     }
-    s.split(',')
+    s.split_whitespace()
         .map(|prop| {
             let mut tokens = prop.split(':').fuse();
             let k = tokens.next();
             let v = tokens.next();
             match (k, v) {
-                (Some(k), Some(v)) => {
-                    let k = k.to_lowercase();
-                    match k.as_str() {
-                        "f" | "field" => format!("\"field\": \"{v}\""),
-                        "a" | "aggregate" => format!("\"aggregate\": \"{v}\""),
-                        "t" | "type" => match v {
-                            "q" | "Q" => "\"type\": \"quantitative\"".to_string(),
-                            "t" | "T" => "\"type\": \"temporal\"".to_string(),
-                            "o" | "O" => "\"type\": \"ordinal\"".to_string(),
-                            "n" | "N" => "\"type\": \"nominal\"".to_string(),
-                            "g" | "G" => "\"type\": \"geojson\"".to_string(),
-                            _ => format!("\"type\": \"{v}\""),
-                        },
-                        "b" | "bin" => format!("\"bin\": {v}"),
-                        "u" | "timeUnit" => format!("\"timeUnit\": \"{v}\""),
-                        _ => format!("\"{k}\": {v}"),
-                    }
-                }
+                (Some(k), Some(v)) => match k {
+                    "f" | "field" => format!("\"field\": \"{v}\""),
+                    "a" | "aggregate" => format!("\"aggregate\": \"{v}\""),
+                    "t" | "type" => match v {
+                        "q" | "Q" => "\"type\": \"quantitative\"".to_string(),
+                        "t" | "T" => "\"type\": \"temporal\"".to_string(),
+                        "o" | "O" => "\"type\": \"ordinal\"".to_string(),
+                        "n" | "N" => "\"type\": \"nominal\"".to_string(),
+                        "g" | "G" => "\"type\": \"geojson\"".to_string(),
+                        _ => format!("\"type\": \"{v}\""),
+                    },
+                    "b" | "bin" => format!("\"bin\": {v}"),
+                    "u" | "timeUnit" => format!("\"timeUnit\": \"{v}\""),
+                    _ => format!("\"{k}\": {v}"),
+                },
                 _ => String::new(),
             }
         })
+        .filter(|s| !s.is_empty())
         .collect::<Vec<String>>()
         .join(",")
 }
@@ -108,6 +154,39 @@ pub fn parse_transforms(s: &str) -> String {
     if s.starts_with('{') {
         return s.to_string();
     }
+    // s.split_whitespace()
+    //     .map(|prop| {
+    //         let mut tokens = prop.split(':').fuse();
+    //         let k = tokens.next();
+    //         let v = tokens.next();
+    //         match (k, v) {
+    //             (Some(k), Some(v)) => match k {
+    //                 "a" | "aggregate" => String::new(),
+    //                 "b" | "bin" => String::new(),
+    //                 "c" | "calculate" => String::new(),
+    //                 "d" | "density" => String::new(),
+    //                 "f" | "filter" => String::new(),
+    //                 // "f" | "flatten" => String::new(),
+    //                 // "f" | "fold" => String::new(),
+    //                 "g" | "groupby" => String::new(),
+    //                 "i" | "impute" => String::new(),
+    //                 "j" | "joinaggregate" => String::new(),
+    //                 "l" | "lookup" => String::new(),
+    //                 "p" | "pivot" => String::new(),
+    //                 "q" | "quantile" => String::new(),
+    //                 "r" | "regression" => String::new(),
+    //                 "s" | "sample" => String::new(),
+    //                 // "s" | "stack" => String::new(),
+    //                 "t" | "timeunit" => String::new(),
+    //                 "w" | "window" => String::new(),
+    //                 _ => format!("\"{k}\": {v}"),
+    //             },
+    //             _ => String::new(),
+    //         }
+    //     })
+    //     .filter(|s| !s.is_empty())
+    //     .collect::<Vec<String>>()
+    //     .join(",");
     s.to_string()
 }
 
