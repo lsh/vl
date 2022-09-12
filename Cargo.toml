@@ -29,6 +29,6 @@ atty = "0.2"
 thiserror = "1.0"
 
 [build-dependencies]
-convert_case = "0.5"
+convert_case = "0.6"
 serde_json = "1.0"
 serde = "1.0"
